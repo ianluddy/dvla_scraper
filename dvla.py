@@ -1,12 +1,19 @@
+# Poll the DVLA website for newly available slots and email me when we find any
 __author__ = 'iluddy'
 
+from mailer import Message, Mailer
 from selenium import webdriver
 import datetime
 from time import sleep
 from random import randint
 
-LICENSE = 'Luddy810257I99CT'
-TEST_CENTRE = 'Morden'
+# Notifications
+MAIL_SERVER = 'YourEmailServer'
+MAIL = 'YourEmailAddress'
+
+# Scraping
+LICENSE = 'YourLicenseNumber'
+TEST_CENTRE = 'YourTestCentrePreference'
 ROOT = 'https://www.gov.uk/book-driving-test'
 DRIVER = None
 
@@ -15,10 +22,10 @@ def today_string():
 
 def create_driver():
     global DRIVER
-    # if randint(0, 10) >= 5:
-    #     DRIVER = webdriver.Chrome('C:\\chromeDRIVER.exe')
-    # else:
-    DRIVER = webdriver.Firefox()
+    if randint(0, 10) >= 5:
+        DRIVER = webdriver.Chrome('C:\\chromeDRIVER.exe')
+    else:
+        DRIVER = webdriver.Firefox()
 
 def start():
     DRIVER.get(ROOT)
@@ -60,12 +67,11 @@ def scrape():
         return slots
 
 def notify(slots):
-    print slots
-    # message = Message(From="ianluddy@gmail.com", To="ianluddy@gmail.com")
-    # message.Subject = "DVLA"
-    # message.Html = str([slot for slot in slots])
-    # sender = Mailer('smtp.gmail.com')
-    # sender.send(message)
+    message = Message(From=MAIL, To=MAIL)
+    message.Subject = "DVLA"
+    message.Html = str([slot for slot in slots])
+    sender = Mailer(MAIL_SERVER)
+    sender.send(message)
 
 def diff_slots(known, new):
     return list(set(new) - set(known))
