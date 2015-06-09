@@ -12,10 +12,11 @@ MAIL_SERVER = 'YourEmailServer'
 MAIL = 'YourEmailAddress'
 
 # Scraping
-LICENSE = 'YourLicenseNumber'
-TEST_CENTRE = 'YourTestCentrePreference'
+LICENSE = 'YourLicense'
+TEST_CENTRE = 'TestCentre'
 ROOT = 'https://www.gov.uk/book-driving-test'
 DRIVER = None
+SLEEP = 120
 
 def today_string():
     return datetime.date.today().strftime("%d/%m/%y")
@@ -38,10 +39,13 @@ def choose_date():
 def choose_test():
     DRIVER.find_element_by_id("test-type-car").click()
 
+def select_test_centre():
+    DRIVER.find_element_by_id("search-results").find_element_by_tag_name("a").click()
+
 def choose_test_centre():
+    DRIVER.find_element_by_id("test-centres-input").clear()
     DRIVER.find_element_by_id("test-centres-input").send_keys(TEST_CENTRE)
     DRIVER.find_element_by_id("test-centres-submit").click()
-    DRIVER.find_element_by_id("search-results").find_element_by_tag_name("a").click()
 
 def get_available_dates():
     return [slot.text for slot in DRIVER.find_elements_by_class_name("slotDateTime")]
@@ -53,20 +57,48 @@ def set_license_and_preferences():
     DRIVER.find_element_by_id("driving-licence-submit").click()
 
 def scrape():
+
+    def element_found(element_id):
+        try:
+            return DRIVER.find_element_by_id(element_id) is not None
+        except:
+            return False
+
+    create_driver()
+    start()
+
     slots = None
-    try:
-        create_driver()
-        start()
-        choose_test()
-        set_license_and_preferences()
-        choose_test_centre()
-        choose_date()
-        slots = get_available_dates()
-    finally:
-        DRIVER.quit()
-        return slots
+    while not slots:
+
+        if element_found("test-type-car"):
+            choose_test()
+
+        elif element_found("search-results"):
+            select_test_centre()
+
+        elif element_found("test-centres-input"):
+            choose_test_centre()
+
+        elif element_found("test-choice-calendar"):
+            choose_date()
+
+        elif element_found("driving-licence"):
+            set_license_and_preferences()
+
+        elif element_found("recaptcha-submit"):
+            pass
+
+        else:
+            slots = get_available_dates()
+            if slots:
+                DRIVER.quit()
+                return slots
+
+        sleep(1)
 
 def notify(slots):
+    print slots
+    return None
     message = Message(From=MAIL, To=MAIL)
     message.Subject = "DVLA"
     message.Html = str([slot for slot in slots])
@@ -95,7 +127,7 @@ def run():
             # Update availability and sleep
             available_slots = updated_slots
 
-        sleep(30)
+        sleep(SLEEP)
 
 if __name__ == "__main__":
     run()
