@@ -67,6 +67,7 @@ def scrape():
     create_driver()
     start()
 
+    # Captcha tends to pop up randomly so lets just evaluate what page we are on every time
     slots = None
     while not slots:
 
@@ -97,8 +98,6 @@ def scrape():
         sleep(1)
 
 def notify(slots):
-    print slots
-    return None
     message = Message(From=MAIL, To=MAIL)
     message.Subject = "DVLA"
     message.Html = str([slot for slot in slots])
